@@ -48,6 +48,12 @@ pub fn attribute_record(input: &[u8]) -> IResult<&[u8], AttributeRecord> {
     let (input, record_type) = be_u32(input)?;
     let record_type = VariableRecordType::from(record_type);
     let (input, record_length_octets) = be_u16(input)?;
+    if record_length_octets < BASE_ATTRIBUTE_RECORD_LENGTH_OCTETS {
+        return Err(nom::Err::Error(nom::error::Error {
+            input,
+            code: nom::error::ErrorKind::Fail
+        }));
+    }
     let (input, fields) = take(record_length_octets - BASE_ATTRIBUTE_RECORD_LENGTH_OCTETS)(input)?;
 
     Ok((input, AttributeRecord::new()
