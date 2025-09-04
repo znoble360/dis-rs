@@ -18,6 +18,14 @@ pub(crate) fn signal_body(input: &[u8]) -> IResult<&[u8], PduBody> {
     let (input, samples) = be_u16(input)?;
     let (input, data) = nom::bytes::complete::take(data_length_in_bits / ONE_BYTE_IN_BITS as u16)(input)?;
 
+    let data_length_in_bytes = data_length_in_bits / ONE_BYTE_IN_BITS as u16;
+    let hangover_bits = data_length_in_bytes % 4;
+    // skip padding to align with the signal pdu's requirement of multiples of 4 bytes
+    let input = match hangover_bits {
+        0 => input,
+        n => nom::bytes::complete::take(4 - n)(input)?.0,
+    };
+
     let encoding_scheme = parse_encoding_scheme(encoding_scheme, data);
 
     let body = Signal::builder()
